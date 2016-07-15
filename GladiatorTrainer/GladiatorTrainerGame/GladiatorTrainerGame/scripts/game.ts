@@ -4,25 +4,18 @@
         Board: Board;
 
         constructor() {
-            this.Board = new Board();            
+            this.Board = new Board();                      
         }
     }
 
     export class Hero {
         Name: string;
-        Strength: number;
-        test: (text: string) => void;
+        Strength: number;      
 
         constructor(name: string, strength: number) {
             this.Name = name; 
             this.Strength = strength;
-
-            this.test = this.writer;
-        }
-        
-        writer = (text) => {
-            alert(text);
-        }
+        }    
     }
 
     export class Board {
@@ -35,13 +28,15 @@
         BoardWidth: number;
         BoardHeight: number; 
         Context: CanvasRenderingContext2D;
+        Canvas: HTMLCanvasElement;
+
         constructor() {
             this.Init();
         }
 
         Init = () => {
-            var canvas = <HTMLCanvasElement>document.getElementById('hexmap');
-
+            this.Canvas = <HTMLCanvasElement>document.getElementById('hexmap');
+            this.Canvas.addEventListener('click', this.FieldClickHandler, false);
             this.BoardHeight = 10;
             this.BoardWidth = 10;
             this.HexagonAngle = 0.523598776;
@@ -52,8 +47,8 @@
             this.HexRectangleHeight = this.SideLength + 2 * this.HexHeight;
             this.HexRectangleWidth = 2 * this.HexRadius;
 
-            if (canvas.getContext) {
-                this.Context = canvas.getContext('2d');
+            if (this.Canvas.getContext) {
+                this.Context = this.Canvas.getContext('2d');
 
                 this.Context.fillStyle = "#000000";
                 this.Context.strokeStyle = "#CCCCCC";
@@ -95,6 +90,71 @@
                 canvasContext.fill();
             } else {
                 canvasContext.stroke();
+            }
+        }
+        DrawDummyPlayer = () => {
+            this.DrawPlayer(3, 1);
+        }
+
+        DrawPlayer = (xin:number, yin:number) => {
+            var x,
+                y,
+                hexX,
+                hexY,
+                screenX,
+                screenY;
+
+            x = xin * this.HexRectangleWidth;
+            y = yin * this.HexRectangleHeight;
+
+
+            hexY = Math.floor(y / (this.HexHeight + this.SideLength));
+            hexX = Math.floor((x - (hexY % 2) * this.HexRadius) / this.HexRectangleWidth);
+
+            screenX = hexX * this.HexRectangleWidth + ((hexY % 2) * this.HexRadius);
+            screenY = hexY * (this.HexHeight + this.SideLength);
+
+            this.Context.clearRect(0, 0, this.Canvas.width, this.Canvas.height);
+
+            this.DrawBoard(this.Context, this.BoardWidth, this.BoardHeight);
+
+            // Check if the mouse's coords are on the board
+            if (hexX >= 0 && hexX < this.BoardWidth) {
+                if (hexY >= 0 && hexY < this.BoardHeight) {
+                    this.Context.fillStyle = "#000000";
+                    this.DrawHexagon(this.Context, screenX, screenY, true);
+                }
+            }
+        }
+
+        FieldClickHandler = (eventInfo) => {
+
+            var x,
+                y,
+                hexX,
+                hexY,
+                screenX,
+                screenY;
+
+            x = eventInfo.offsetX || eventInfo.layerX;
+            y = eventInfo.offsetY || eventInfo.layerY;
+
+
+            hexY = Math.floor(y / (this.HexHeight + this.SideLength));
+            hexX = Math.floor((x - (hexY % 2) * this.HexRadius) / this.HexRectangleWidth);
+
+            screenX = hexX * this.HexRectangleWidth + ((hexY % 2) * this.HexRadius);
+            screenY = hexY * (this.HexHeight + this.SideLength);
+
+            this.Context.clearRect(0, 0, this.Canvas.width, this.Canvas.height);
+
+            this.DrawBoard(this.Context, this.BoardWidth, this.BoardHeight);
+
+            // Check if the mouse's coords are on the board
+                if (hexY >= 0 && hexY < this.BoardHeight) {
+                    this.Context.fillStyle = "#000000";
+                    this.DrawHexagon(this.Context, screenX, screenY, true);
+                }
             }
         }
     }
