@@ -4,18 +4,31 @@
         Board: Board;
 
         constructor() {
-            this.Board = new Board();                      
+            this.Board = new Board();  
+            this.Simulation();                    
+        }
+
+        Simulation = () => {
+            var objects = new Array<BoardObject>();
+            objects.push(new BoardObject(1, 1, "#000000"));
+            objects.push(new BoardObject(3, 1, "#cecece"));
+
+            this.Board.DrawMultipleBoardObjects(objects);
         }
     }
 
-    export class Hero {
-        Name: string;
-        Strength: number;      
 
-        constructor(name: string, strength: number) {
-            this.Name = name; 
-            this.Strength = strength;
-        }    
+    export class BoardObject {
+        xpos: number; 
+        ypos: number;
+        color: string;
+
+        constructor(x: number, y: number, color: string){
+            this.color = color;
+            this.xpos = x;
+            this.ypos = y;
+        }
+        
     }
 
     export class Board {
@@ -23,10 +36,10 @@
         HexRadius: number;
         HexRectangleHeight: number;
         HexRectangleWidth: number;
-        HexagonAngle:number; // 30 degrees in radians
+        HexagonAngle: number; // 30 degrees in radians
         SideLength: number;
         BoardWidth: number;
-        BoardHeight: number; 
+        BoardHeight: number;
         Context: CanvasRenderingContext2D;
         Canvas: HTMLCanvasElement;
 
@@ -58,6 +71,17 @@
             }
         }
 
+        DrawObjectsOnBoard = (objects: BoardObject[]) => {
+            for (var y = 0; y <= this.BoardHeight; y++) {
+                for (var x = 0; x <= this.BoardWidth; x++) {
+                    var objectsOnField = objects.filter(o => o.xpos == x && o.ypos == y);
+                    if (objectsOnField) {
+                       
+                    }
+                }
+            }
+        }
+
         DrawBoard = (canvasContext: CanvasRenderingContext2D, width: number, height: number) => {
             var i,
                 j;
@@ -65,7 +89,7 @@
             for (i = 0; i < width; ++i) {
                 for (j = 0; j < height; ++j) {
                     this.DrawHexagon(
-                        this.Context ,
+                        this.Context,
                         i * this.HexRectangleWidth + ((j % 2) * this.HexRadius),
                         j * (this.SideLength + this.HexHeight),
                         false
@@ -92,11 +116,48 @@
                 canvasContext.stroke();
             }
         }
-        DrawDummyPlayer = () => {
-            this.DrawPlayer(3, 1);
+
+        DrawDummyObject = () => {
+            this.DrawBoardObject(3, 1, "#000000");
         }
 
-        DrawPlayer = (xin:number, yin:number) => {
+        DrawMultipleBoardObjects = (objects: BoardObject[]) => {
+            this.Context.clearRect(0, 0, this.Canvas.width, this.Canvas.height);
+
+            this.DrawBoard(this.Context, this.BoardWidth, this.BoardHeight);
+
+
+            $.each(objects, (i, object) => {
+                var x,
+                    y,
+                    hexX,
+                    hexY,
+                    screenX,
+                    screenY;
+
+                x = object.xpos * this.HexRectangleWidth;
+                y = object.ypos * this.HexRectangleHeight;
+
+                hexY = Math.floor(y / (this.HexHeight + this.SideLength));
+                hexX = Math.floor((x - (hexY % 2) * this.HexRadius) / this.HexRectangleWidth);
+
+                screenX = hexX * this.HexRectangleWidth + ((hexY % 2) * this.HexRadius);
+                screenY = hexY * (this.HexHeight + this.SideLength);
+
+                if (hexX >= 0 && hexX < this.BoardWidth) {
+                    if (hexY >= 0 && hexY < this.BoardHeight) {
+                        this.Context.fillStyle = object.color;
+                        this.DrawHexagon(this.Context, screenX, screenY, true);
+                    }
+                }
+
+            });
+
+
+        }
+
+
+        DrawBoardObject = (xin:number, yin:number, color: string) => {
             var x,
                 y,
                 hexX,
@@ -121,7 +182,7 @@
             // Check if the mouse's coords are on the board
             if (hexX >= 0 && hexX < this.BoardWidth) {
                 if (hexY >= 0 && hexY < this.BoardHeight) {
-                    this.Context.fillStyle = "#000000";
+                    this.Context.fillStyle = color;
                     this.DrawHexagon(this.Context, screenX, screenY, true);
                 }
             }
@@ -156,7 +217,8 @@
                     this.DrawHexagon(this.Context, screenX, screenY, true);
                 }
             }
-        }
-    }
+        
 
+    }
+    
 }
