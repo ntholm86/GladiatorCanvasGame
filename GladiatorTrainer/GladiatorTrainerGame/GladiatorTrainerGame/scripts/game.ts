@@ -37,8 +37,7 @@
     }
 
     export class BoardObject {
-        color: string;
-        Selectable: boolean;
+        color: string;    
 
         constructor(color: string) {
             this.color = color;
@@ -70,9 +69,8 @@
                     this.Fields[x][y] = new Field(x, y);
                 }
             }
-            console.log(this.Fields);
         }
-
+        
         Init = () => {
             this.Canvas = <HTMLCanvasElement>document.getElementById('hexmap');
             this.Canvas.addEventListener('click', this.FieldMarkerClickHandler, false);
@@ -97,7 +95,7 @@
         }
 
 
-        DrawHexagon = (canvasContext: CanvasRenderingContext2D, x: number, y: number, fill: boolean, xpos: number, ypos: number, selected: boolean) => {
+        DrawHexagon = (canvasContext: CanvasRenderingContext2D, x: number, y: number, fill: boolean, xpos: number, ypos: number, field: Field = null) => {
             var fill = fill || false;
             canvasContext.beginPath();
             canvasContext.moveTo(x + this.HexRadius, y);
@@ -106,10 +104,14 @@
             canvasContext.lineTo(x + this.HexRadius, y + this.HexRectangleHeight);
             canvasContext.lineTo(x, y + this.SideLength + this.HexHeight);
             canvasContext.lineTo(x, y + this.HexHeight);
-         
+
+            if (field) {
+                if (field.Selected) {
+                    canvasContext.fillStyle = "red";
+                }
+            }
        
             canvasContext.closePath();
-            
             
             if (fill) {
                 canvasContext.fill();
@@ -144,11 +146,12 @@
                                 this.Context.fillStyle = field.Object.color;
                             } 
 
-
-                            this.DrawHexagon(this.Context, screenX, screenY, true, x, y, false);
+                            this.DrawHexagon(this.Context, screenX, screenY, true, x, y, field);
+                            field.Selected = false;
                         }
                     }
                     this.Context.fillStyle = "white";
+                   
                 }
             }
         }

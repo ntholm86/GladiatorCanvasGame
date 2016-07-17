@@ -58,7 +58,8 @@ var Game;
                     _this.Context.lineWidth = 1;
                 }
             };
-            this.DrawHexagon = function (canvasContext, x, y, fill, xpos, ypos, selected) {
+            this.DrawHexagon = function (canvasContext, x, y, fill, xpos, ypos, field) {
+                if (field === void 0) { field = null; }
                 var fill = fill || false;
                 canvasContext.beginPath();
                 canvasContext.moveTo(x + _this.HexRadius, y);
@@ -67,6 +68,11 @@ var Game;
                 canvasContext.lineTo(x + _this.HexRadius, y + _this.HexRectangleHeight);
                 canvasContext.lineTo(x, y + _this.SideLength + _this.HexHeight);
                 canvasContext.lineTo(x, y + _this.HexHeight);
+                if (field) {
+                    if (field.Selected) {
+                        canvasContext.fillStyle = "red";
+                    }
+                }
                 canvasContext.closePath();
                 if (fill) {
                     canvasContext.fill();
@@ -89,7 +95,8 @@ var Game;
                                 if (field.Object) {
                                     _this.Context.fillStyle = field.Object.color;
                                 }
-                                _this.DrawHexagon(_this.Context, screenX, screenY, true, x, y, false);
+                                _this.DrawHexagon(_this.Context, screenX, screenY, true, x, y, field);
+                                field.Selected = false;
                             }
                         }
                         _this.Context.fillStyle = "white";
@@ -124,7 +131,6 @@ var Game;
                     this.Fields[x][y] = new Field(x, y);
                 }
             }
-            console.log(this.Fields);
         }
         return Board;
     }());
