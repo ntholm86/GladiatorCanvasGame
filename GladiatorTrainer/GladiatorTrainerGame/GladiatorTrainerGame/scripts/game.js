@@ -4,25 +4,35 @@ var Game;
         function App() {
             var _this = this;
             this.Simulation = function () {
-                var objects = new Array();
-                objects.push(new BoardObject(9, 0, "#000000"));
-                objects.push(new BoardObject(2, 2, "#cecece"));
-                objects.push(new BoardObject(5, 3, "#32ba3e"));
-                objects.push(new BoardObject(3, 9, "#3880e3"));
-                _this.Board.ObjectsOnBoard = objects;
-                _this.Board.DrawMultipleBoardObjects(objects);
+                _this.Board.DrawFields();
+            };
+            this.InitiateFields = function () {
+                _this.Board.Fields.push();
+                _this.Board.Fields[0][0].Objects.push(new BoardObject("#000000"));
+                _this.Board.Fields[6][7].Objects.push(new BoardObject("#000000"));
+                _this.Board.Fields[9][7].Objects.push(new BoardObject("#cecece"));
+                _this.Board.Fields[6][5].Objects.push(new BoardObject("#32ba3e"));
+                _this.Board.Fields[1][7].Objects.push(new BoardObject("#3880e3"));
             };
             this.Board = new Board();
+            this.InitiateFields();
             this.Simulation();
         }
         return App;
     }());
     Game.App = App;
-    var BoardObject = (function () {
-        function BoardObject(x, y, color) {
-            this.color = color;
+    var Field = (function () {
+        function Field(x, y) {
             this.xpos = x;
             this.ypos = y;
+            this.Objects = new Array();
+        }
+        return Field;
+    }());
+    Game.Field = Field;
+    var BoardObject = (function () {
+        function BoardObject(color) {
+            this.color = color;
         }
         return BoardObject;
     }());
@@ -32,7 +42,7 @@ var Game;
             var _this = this;
             this.Init = function () {
                 _this.Canvas = document.getElementById('hexmap');
-                _this.Canvas.addEventListener('click', _this.FieldMarkerClickHandler, false);
+                //this.Canvas.addEventListener('click', this.FieldMarkerClickHandler, false);
                 _this.BoardHeight = 10;
                 _this.BoardWidth = 10;
                 _this.HexagonAngle = 0.523598776;
@@ -49,15 +59,6 @@ var Game;
                     _this.DrawBoard(_this.Context, _this.BoardWidth, _this.BoardHeight);
                 }
             };
-            //DrawObjectsOnBoard = (objects: BoardObject[]) => {
-            //    for (var y = 0; y <= this.BoardHeight; y++) {
-            //        for (var x = 0; x <= this.BoardWidth; x++) {
-            //            var objectsOnField = objects.filter(o => o.xpos == x && o.ypos == y);
-            //            if (objectsOnField) {
-            //            }
-            //        }
-            //    }
-            //}
             this.DrawBoard = function (canvasContext, width, height) {
                 var i, j;
                 for (i = 0; i < width; ++i) {
@@ -85,23 +86,34 @@ var Game;
                     canvasContext.stroke();
                 }
             };
-            this.DrawMultipleBoardObjects = function (objects) {
+            this.DrawFields = function () {
                 _this.Context.clearRect(0, 0, _this.Canvas.width, _this.Canvas.height);
                 _this.DrawBoard(_this.Context, _this.BoardWidth, _this.BoardHeight);
+                for (var x = 0; x < _this.BoardWidth; ++x) {
+                    for (var y = 0; y < _this.BoardHeight; ++y) {
+                        $.each(_this.Fields[x][y].Objects, function (i, object) {
+                            var screenX, screenY;
+                            screenX = x * _this.HexRectangleWidth + ((y % 2) * _this.HexRadius);
+                            screenY = y * (_this.HexHeight + _this.SideLength);
+                            if (x >= 0 && x < _this.BoardWidth) {
+                                if (y >= 0 && y < _this.BoardHeight) {
+                                    _this.Context.fillStyle = object.color;
+                                    _this.DrawHexagon(_this.Context, screenX, screenY, true, x, y);
+                                }
+                            }
+                        });
+                    }
+                }
+            };
+            this.DrawMultipleBoardObjects = function (objects) {
                 $.each(objects, function (i, object) {
                     var x, y, hexX, hexY, screenX, screenY;
-                    x = object.xpos * _this.HexRectangleWidth;
-                    y = object.ypos * _this.HexRectangleHeight;
-                    hexY = Math.floor(y / (_this.HexHeight + _this.SideLength));
-                    hexX = Math.floor((x - (hexY % 2) * _this.HexRadius) / _this.HexRectangleWidth);
-                    screenX = object.xpos * _this.HexRectangleWidth + ((object.ypos % 2) * _this.HexRadius);
-                    screenY = object.ypos * (_this.HexHeight + _this.SideLength);
-                    if (object.xpos >= 0 && object.xpos < _this.BoardWidth) {
-                        if (object.ypos >= 0 && object.ypos < _this.BoardHeight) {
-                            _this.Context.fillStyle = object.color;
-                            _this.DrawHexagon(_this.Context, screenX, screenY, true, object.xpos, object.ypos);
-                        }
-                    }
+                    //if (object.xpos >= 0 && object.xpos < this.BoardWidth) {
+                    //    if (object.ypos >= 0 && object.ypos < this.BoardHeight) {
+                    //        this.Context.fillStyle = object.color;
+                    //        this.DrawHexagon(this.Context, screenX, screenY, true, object.xpos, object.ypos);
+                    //    }
+                    //}
                 });
             };
             this.DrawBoardObject = function (xin, yin, color) {
@@ -136,28 +148,15 @@ var Game;
                     _this.DrawHexagon(_this.Context, screenX, screenY, true, hexX, hexY);
                 }
             };
-            this.FieldMarkerClickHandler = function (eventInfo) {
-                // 1) find ud af om der er nogen objecter på feltet
-                var x, y, hexX, hexY, screenX, screenY;
-                x = eventInfo.offsetX || eventInfo.layerX;
-                y = eventInfo.offsetY || eventInfo.layerY;
-                hexY = Math.floor(y / (_this.HexHeight + _this.SideLength));
-                hexX = Math.floor((x - (hexY % 2) * _this.HexRadius) / _this.HexRectangleWidth);
-                if (_this.ObjectsOnBoard.filter(function (o) { return o.xpos == hexX && o.ypos == hexY; }).length > 0) {
-                    console.log("clearing coords " + hexX + "," + hexY);
-                    _this.Context.clearRect(hexX, hexY, _this.Canvas.width, _this.Canvas.height);
-                }
-                screenX = hexX * _this.HexRectangleWidth + ((hexY % 2) * _this.HexRadius);
-                screenY = hexY * (_this.HexHeight + _this.SideLength);
-                //this.Context.clearRect(0, 0, this.Canvas.width, this.Canvas.height);
-                //this.DrawBoard(this.Context, this.BoardWidth, this.BoardHeight);
-                //// Check if the mouse's coords are on the board
-                //if (hexY >= 0 && hexY < this.BoardHeight) {
-                //    this.Context.fillStyle = "#000000";
-                //    this.DrawHexagon(this.Context, screenX, screenY, true);
-                //}
-            };
             this.Init();
+            this.Fields = [];
+            for (var x = 0; x < this.BoardWidth; ++x) {
+                this.Fields[x] = [];
+                for (var y = 0; y < this.BoardHeight; ++y) {
+                    this.Fields[x][y] = new Field(x, y);
+                }
+            }
+            console.log(this.Fields);
         }
         return Board;
     }());
