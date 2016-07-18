@@ -220,11 +220,11 @@
             var clickedField = this.GetFieldByCoords(hexX, hexY);
            
             if (this.SelectedField.Xpos != -1) {//hvis der er noget der er selected  
-                if (clickedField.Object == null) {
+                if (clickedField.Object == null) {//hvis det klikkede felt er tomt
                     this.MoveBoardObject(this.SelectedField, clickedField);
                     this.Deselect();
                 }                    
-            }else{
+            }else if(clickedField.Object){
                 this.SelectedField = clickedField;
             }
 

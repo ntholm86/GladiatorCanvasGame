@@ -151,7 +151,7 @@ var Game;
                         _this.Deselect();
                     }
                 }
-                else {
+                else if (clickedField.Object) {
                     _this.SelectedField = clickedField;
                 }
                 _this.DrawBoardFields();
