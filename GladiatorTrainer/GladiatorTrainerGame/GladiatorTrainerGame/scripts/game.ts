@@ -10,41 +10,57 @@
         }
 
         Simulation = () => {
-            this.Board.DrawFields();
+            this.Board.DrawBoardFields();
         }
 
         InitiateFields = () => {
             this.Board.Fields.push();
-            this.Board.Fields[0][0].Object = new BoardObject("#000000");
-            this.Board.Fields[6][7].Object = new BoardObject("#000000");
-            this.Board.Fields[9][7].Object = new BoardObject("#cecece");
-            this.Board.Fields[6][5].Object = new BoardObject("#32ba3e");
-            this.Board.Fields[1][7].Object = new BoardObject("#3880e3");
+            this.Board.Fields[0][0].Object = new BoardObject("#000000", "green", "yellow", true);
+            this.Board.Fields[6][7].Object = new BoardObject("#000000", "green", "yellow", true);
+            this.Board.Fields[9][7].Object = new BoardObject("#cecece", "green", "yellow", true);
+            this.Board.Fields[6][5].Object = new BoardObject("#32ba3e", "green", "yellow", true);
+            this.Board.Fields[1][7].Object = new BoardObject("#3880e3", "green", "yellow", true);
         }
     }
 
     export class Field {
-        xpos: number;
-        ypos: number;
+        Xpos: number;
+        Ypos: number;
         Object: BoardObject;
-        Selected: boolean; 
+        FillColor: string;
 
         constructor(x: number, y: number) {
-            this.xpos = x;
-            this.ypos = y;     
-            this.Selected = false;               
+            this.Xpos = x;
+            this.Ypos = y;
+            this.FillColor = "pink";
         }
     }
 
     export class BoardObject {
-        color: string;    
+        Color: string;
+        SelectedColor: string;
+        HoverColor: string;
+        InterActive: boolean;
 
-        constructor(color: string) {
-            this.color = color;
+        constructor(color: string, selectedColor: string, hoverColor: string, interactive: boolean) {
+            this.Color = color;
+            this.InterActive = interactive;
+            this.SelectedColor = selectedColor;
+            this.HoverColor = hoverColor;
         }
 
     }
 
+    export class Coordinates {
+        Xpos: number;
+        Ypos: number;
+
+        constructor(x: number, y: number) {
+            this.Xpos = x;
+            this.Ypos = y;
+        }
+
+    }
 
     export class Board {
         HexHeight: number;
@@ -59,8 +75,13 @@
         Canvas: HTMLCanvasElement;
         ObjectsOnBoard: BoardObject[];
         Fields: Field[][];
-
+        SelectedField: Field;
+        HoveredField: Field;
+        FakeField: Field;
         constructor() {
+            this.FakeField = new Field(-1, -1);
+            this.SelectedField = this.FakeField;
+            this.HoveredField = this.FakeField;
             this.Init();
             this.Fields = [];
             for (var x = 0; x < this.BoardWidth; ++x) {
@@ -70,10 +91,12 @@
                 }
             }
         }
-        
+
         Init = () => {
             this.Canvas = <HTMLCanvasElement>document.getElementById('hexmap');
-            this.Canvas.addEventListener('click', this.FieldMarkerClickHandler, false);
+            this.Canvas.addEventListener('click', this.FieldClickHandler, false);
+            this.Canvas.addEventListener('contextmenu', this.RightClickHandler, false);
+            this.Canvas.addEventListener('mousemove', this.MouseMove, false);
             this.BoardHeight = 10;
             this.BoardWidth = 10;
             this.HexagonAngle = 0.523598776;
@@ -90,12 +113,11 @@
                 this.Context.fillStyle = "#000000";
                 this.Context.strokeStyle = "#CCCCCC";
                 this.Context.lineWidth = 1;
-             
+
             }
         }
 
-
-        DrawHexagon = (canvasContext: CanvasRenderingContext2D, x: number, y: number, fill: boolean, xpos: number, ypos: number, field: Field = null) => {
+        DrawHexagon = (canvasContext: CanvasRenderingContext2D, x: number, y: number, fill: boolean, xpos: number, ypos: number) => {
             var fill = fill || false;
             canvasContext.beginPath();
             canvasContext.moveTo(x + this.HexRadius, y);
@@ -105,33 +127,27 @@
             canvasContext.lineTo(x, y + this.SideLength + this.HexHeight);
             canvasContext.lineTo(x, y + this.HexHeight);
 
-            if (field) {
-                if (field.Selected) {
-                    canvasContext.fillStyle = "red";
-                }
-            }
-       
             canvasContext.closePath();
-            
+
             if (fill) {
                 canvasContext.fill();
-            } 
+            }
 
             canvasContext.stroke();
 
             canvasContext.fillStyle = "#000000";
             canvasContext.font = "18pt Arial";
             canvasContext.fillText(xpos + "," + ypos, x + this.HexRadius - 15, y + this.HexHeight + 25);
-           
+
         }
 
-        DrawFields = () => {
+        DrawBoardFields = () => {
 
             this.Context.clearRect(0, 0, this.Canvas.width, this.Canvas.height);
-           
+
 
             for (var x = 0; x < this.BoardWidth; ++x) {
-                for (var y = 0; y < this.BoardHeight; ++y) {                 
+                for (var y = 0; y < this.BoardHeight; ++y) {
 
                     var screenX,
                         screenY;
@@ -142,31 +158,49 @@
                     if (x >= 0 && x < this.BoardWidth) {
                         if (y >= 0 && y < this.BoardHeight) {
                             var field = this.Fields[x][y];
-                            if (field.Object) {
-                                this.Context.fillStyle = field.Object.color;
-                            } 
+                            if (field.Object) {//Hvis der er et object på feltet
+                                this.Context.fillStyle = field.Object.Color;
+                                if (field == this.SelectedField) {//hvis feltet er klikket på og valgt
+                                    this.Context.fillStyle = field.Object.SelectedColor;
+                                }
+                                if (field == this.HoveredField) {//hvis hover
+                                    this.Context.fillStyle = field.Object.HoverColor;
+                                }
+                            } else if (this.SelectedField.Xpos != -1 && field == this.HoveredField) {//ellers brug farven fra field når man hover
+                                this.Context.fillStyle = field.FillColor;
+                            }
 
-                            this.DrawHexagon(this.Context, screenX, screenY, true, x, y, field);
-                            field.Selected = false;
+                            this.DrawHexagon(this.Context, screenX, screenY, true, x, y);
                         }
                     }
                     this.Context.fillStyle = "white";
-                   
+
                 }
             }
         }
 
+        Deselect = () => {
+            this.SelectedField = this.FakeField;
+            this.DrawBoardFields();
+        }
+
+        RightClickHandler = (eventInfo: Event) => {
+            this.Deselect();
+            eventInfo.preventDefault();
+            eventInfo.stopImmediatePropagation();
+            return false;
+
+        }
+
+        MoveBoardObject = (fieldFrom: Field, fieldTo: Field) => {
+            fieldTo.Object = fieldFrom.Object;
+            fieldFrom.Object = null;
+            this.DrawBoardFields();
+            console.log("moved object to " + fieldTo.Xpos + "," + fieldTo.Ypos);
+        }
 
 
-
-
-      
-
-
-        FieldMarkerClickHandler = (eventInfo) => {
-            // 1) find ud af om der er nogen objecter på feltet
-
-
+        FieldClickHandler = (eventInfo) => {
             var x,
                 y,
                 hexX,
@@ -180,23 +214,74 @@
             hexX = Math.floor((x - (hexY % 2) * this.HexRadius) / this.HexRectangleWidth);
 
 
-            if (this.Fields[hexX][hexY].Object != null ) {
+            if (this.Fields[hexX][hexY] != undefined && this.Fields[hexX][hexY].Object != null) {
                 console.log("object found on " + hexX + "," + hexY);
             }
 
 
-            screenX = hexX * this.HexRectangleWidth + ((hexY % 2) * this.HexRadius);
-            screenY = hexY * (this.HexHeight + this.SideLength);
+            var hoveredField = this.GetFieldByCoords(hexX, hexY);
 
-            var selectedField = this.GetFieldByCoords(hexX, hexY);
-            selectedField.Selected = true;
-            this.DrawFields();
+            if (this.SelectedField.Xpos != -1) {
+                this.MoveBoardObject(this.SelectedField, hoveredField);
+                this.Deselect();
+            } else {
+                this.SelectedField = hoveredField;
+            }
+
+
+            this.DrawBoardFields();
+
         }
 
         GetFieldByCoords = (x, y) => {
             var field = this.Fields[x][y];
             return field;
         }
+
+        CheckMouseOnBoard = (hexX, hexY) => {
+            if (hexX >= 0 && hexX < this.BoardWidth) {
+                if (hexY >= 0 && hexY < this.BoardHeight) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        MouseMove = (eventInfo) => {
+            var x,
+                y,
+                hexX,
+                hexY,
+                screenX,
+                screenY;
+
+            x = eventInfo.offsetX || eventInfo.layerX;
+            y = eventInfo.offsetY || eventInfo.layerY;
+            hexY = Math.floor(y / (this.HexHeight + this.SideLength));
+            hexX = Math.floor((x - (hexY % 2) * this.HexRadius) / this.HexRectangleWidth);
+
+            if (!this.CheckMouseOnBoard(hexX, hexY)) {
+                return false;
+            }
+
+            var field = this.Fields[hexX][hexY];
+
+            if (field.Object == null) {//hvis det er et felt vi kan rykke til                
+                this.Context.fillStyle = "pink";
+            }
+
+            //if (this.SelectedField.Object.InterActive) {
+
+            //}
+
+
+
+
+
+
+            this.HoveredField = field;
+            this.DrawBoardFields();
+        };
     }
 
 }
