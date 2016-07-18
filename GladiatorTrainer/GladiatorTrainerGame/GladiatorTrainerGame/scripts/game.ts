@@ -15,8 +15,8 @@
 
         InitiateFields = () => {
             this.Board.Fields.push();
-            this.Board.Fields[0][0].Object = new BoardObject("#000000", "green", "yellow", true);
-            this.Board.Fields[6][7].Object = new BoardObject("#000000", "green", "yellow", true);
+            this.Board.Fields[0][0].Object = new BoardObject("red", "green", "yellow", true);
+            this.Board.Fields[6][7].Object = new BoardObject("purple", "green", "yellow", true);
             this.Board.Fields[9][7].Object = new BoardObject("#cecece", "green", "yellow", true);
             this.Board.Fields[6][5].Object = new BoardObject("#32ba3e", "green", "yellow", true);
             this.Board.Fields[1][7].Object = new BoardObject("#3880e3", "green", "yellow", true);
@@ -142,7 +142,10 @@
         }
 
         DrawBoardFields = () => {
-
+            console.log("SelectedField: ");
+            console.log(this.SelectedField);
+            console.log("HoveredField: ");
+            console.log(this.HoveredField);
             this.Context.clearRect(0, 0, this.Canvas.width, this.Canvas.height);
 
 
@@ -157,6 +160,7 @@
 
                     if (x >= 0 && x < this.BoardWidth) {
                         if (y >= 0 && y < this.BoardHeight) {
+                            this.Context.fillStyle = "white";
                             var field = this.Fields[x][y];
                             if (field.Object) {//Hvis der er et object på feltet
                                 this.Context.fillStyle = field.Object.Color;
@@ -173,7 +177,7 @@
                             this.DrawHexagon(this.Context, screenX, screenY, true, x, y);
                         }
                     }
-                    this.Context.fillStyle = "white";
+                   
 
                 }
             }
@@ -212,22 +216,17 @@
             y = eventInfo.offsetY || eventInfo.layerY;
             hexY = Math.floor(y / (this.HexHeight + this.SideLength));
             hexX = Math.floor((x - (hexY % 2) * this.HexRadius) / this.HexRectangleWidth);
-
-
-            if (this.Fields[hexX][hexY] != undefined && this.Fields[hexX][hexY].Object != null) {
-                console.log("object found on " + hexX + "," + hexY);
+            
+            var clickedField = this.GetFieldByCoords(hexX, hexY);
+           
+            if (this.SelectedField.Xpos != -1) {//hvis der er noget der er selected  
+                if (clickedField.Object == null) {
+                    this.MoveBoardObject(this.SelectedField, clickedField);
+                    this.Deselect();
+                }                    
+            }else{
+                this.SelectedField = clickedField;
             }
-
-
-            var hoveredField = this.GetFieldByCoords(hexX, hexY);
-
-            if (this.SelectedField.Xpos != -1) {
-                this.MoveBoardObject(this.SelectedField, hoveredField);
-                this.Deselect();
-            } else {
-                this.SelectedField = hoveredField;
-            }
-
 
             this.DrawBoardFields();
 
@@ -266,21 +265,17 @@
 
             var field = this.Fields[hexX][hexY];
 
-            if (field.Object == null) {//hvis det er et felt vi kan rykke til                
-                this.Context.fillStyle = "pink";
+            
+
+            if (this.HoveredField != field) {
+                if (field.Object == null) {//hvis det er et felt vi kan rykke til                
+                    this.Context.fillStyle = "pink";
+                }
+
+                this.HoveredField = field;
+                this.DrawBoardFields();
             }
-
-            //if (this.SelectedField.Object.InterActive) {
-
-            //}
-
-
-
-
-
-
-            this.HoveredField = field;
-            this.DrawBoardFields();
+            
         };
     }
 
