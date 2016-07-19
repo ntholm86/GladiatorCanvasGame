@@ -1,4 +1,4 @@
-﻿module Game {
+﻿module GameClient {
 
     export class App {
         Board: Board;

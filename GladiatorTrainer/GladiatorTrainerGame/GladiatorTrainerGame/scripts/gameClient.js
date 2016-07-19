@@ -1,5 +1,5 @@
-var Game;
-(function (Game) {
+var GameClient;
+(function (GameClient) {
     var App = (function () {
         function App() {
             var _this = this;
@@ -20,7 +20,7 @@ var Game;
         }
         return App;
     }());
-    Game.App = App;
+    GameClient.App = App;
     var Field = (function () {
         function Field(x, y) {
             this.Xpos = x;
@@ -29,7 +29,7 @@ var Game;
         }
         return Field;
     }());
-    Game.Field = Field;
+    GameClient.Field = Field;
     var BoardObject = (function () {
         function BoardObject(color, selectedColor, hoverColor, interactive) {
             this.Color = color;
@@ -39,7 +39,7 @@ var Game;
         }
         return BoardObject;
     }());
-    Game.BoardObject = BoardObject;
+    GameClient.BoardObject = BoardObject;
     var Board = (function () {
         function Board() {
             var _this = this;
@@ -197,5 +197,6 @@ var Game;
         }
         return Board;
     }());
-    Game.Board = Board;
-})(Game || (Game = {}));
+    GameClient.Board = Board;
+})(GameClient || (GameClient = {}));
+//# sourceMappingURL=gameClient.js.map

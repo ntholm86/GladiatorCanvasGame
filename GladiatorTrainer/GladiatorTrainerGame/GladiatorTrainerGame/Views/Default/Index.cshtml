@@ -2,7 +2,7 @@
     ViewBag.Title = "Index";
 }
 @section head{
-    <script src="@Url.Content("~/Scripts/game.js")"></script>
+    <script src="@Url.Content("~/Scripts/gameClient.js")"></script>
     <style type="text/css">
         canvas {
             border: 0;
@@ -17,7 +17,7 @@
 @section scripts{
     <script>
         $(function () {
-            var app = new Game.App();
+            var app = new GameClient.App();
           
 
         });

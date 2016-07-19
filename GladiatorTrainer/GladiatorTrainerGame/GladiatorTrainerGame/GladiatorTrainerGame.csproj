@@ -128,6 +128,7 @@
     <Content Include="scripts\ai.0.22.9-build00167.min.js" />
     <Content Include="scripts\bootstrap.js" />
     <Content Include="scripts\bootstrap.min.js" />
+    <None Include=".bin\node.cmd" />
     <None Include="scripts\jquery-1.10.2.intellisense.js" />
     <Content Include="scripts\jquery-1.10.2.js" />
     <Content Include="scripts\jquery-1.10.2.min.js" />
@@ -167,7 +168,8 @@
     <Folder Include="Models\" />
   </ItemGroup>
   <ItemGroup>
-    <TypeScriptCompile Include="scripts\game.ts" />
+    <TypeScriptCompile Include="scripts\gameClient.ts" />
+    <TypeScriptCompile Include="scripts\gameServer.ts" />
     <TypeScriptCompile Include="scripts\typings\jquery.d.ts" />
   </ItemGroup>
   <ItemGroup>
