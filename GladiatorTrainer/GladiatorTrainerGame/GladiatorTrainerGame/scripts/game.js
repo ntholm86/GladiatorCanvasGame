@@ -25,7 +25,7 @@ var Game;
         function Field(x, y) {
             this.Xpos = x;
             this.Ypos = y;
-            this.FillColor = "pink";
+            this.FillColor = "#2bb54f";
         }
         return Field;
     }());
@@ -40,14 +40,6 @@ var Game;
         return BoardObject;
     }());
     Game.BoardObject = BoardObject;
-    var Coordinates = (function () {
-        function Coordinates(x, y) {
-            this.Xpos = x;
-            this.Ypos = y;
-        }
-        return Coordinates;
-    }());
-    Game.Coordinates = Coordinates;
     var Board = (function () {
         function Board() {
             var _this = this;
@@ -103,7 +95,10 @@ var Game;
                         if (x >= 0 && x < _this.BoardWidth) {
                             if (y >= 0 && y < _this.BoardHeight) {
                                 _this.Context.fillStyle = "white";
+                                _this.Context.strokeStyle = "#CCCCCC";
+                                _this.Context.lineWidth = 1;
                                 var field = _this.Fields[x][y];
+                                var fill = true;
                                 if (field.Object) {
                                     _this.Context.fillStyle = field.Object.Color;
                                     if (field == _this.SelectedField) {
@@ -114,9 +109,11 @@ var Game;
                                     }
                                 }
                                 else if (_this.SelectedField.Xpos != -1 && field == _this.HoveredField) {
-                                    _this.Context.fillStyle = field.FillColor;
+                                    _this.Context.strokeStyle = field.FillColor;
+                                    _this.Context.lineWidth = 5;
+                                    fill = false;
                                 }
-                                _this.DrawHexagon(_this.Context, screenX, screenY, true, x, y);
+                                _this.DrawHexagon(_this.Context, screenX, screenY, fill, x, y);
                             }
                         }
                     }

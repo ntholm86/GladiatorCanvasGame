@@ -32,7 +32,7 @@
         constructor(x: number, y: number) {
             this.Xpos = x;
             this.Ypos = y;
-            this.FillColor = "pink";
+            this.FillColor = "#2bb54f";
         }
     }
 
@@ -47,17 +47,6 @@
             this.InterActive = interactive;
             this.SelectedColor = selectedColor;
             this.HoverColor = hoverColor;
-        }
-
-    }
-
-    export class Coordinates {
-        Xpos: number;
-        Ypos: number;
-
-        constructor(x: number, y: number) {
-            this.Xpos = x;
-            this.Ypos = y;
         }
 
     }
@@ -119,7 +108,7 @@
 
         DrawHexagon = (canvasContext: CanvasRenderingContext2D, x: number, y: number, fill: boolean, xpos: number, ypos: number) => {
             var fill = fill || false;
-            canvasContext.beginPath();
+            canvasContext.beginPath();            
             canvasContext.moveTo(x + this.HexRadius, y);
             canvasContext.lineTo(x + this.HexRectangleWidth, y + this.HexHeight);
             canvasContext.lineTo(x + this.HexRectangleWidth, y + this.HexHeight + this.SideLength);
@@ -132,7 +121,7 @@
             if (fill) {
                 canvasContext.fill();
             }
-
+            
             canvasContext.stroke();
 
             canvasContext.fillStyle = "#000000";
@@ -161,7 +150,10 @@
                     if (x >= 0 && x < this.BoardWidth) {
                         if (y >= 0 && y < this.BoardHeight) {
                             this.Context.fillStyle = "white";
+                            this.Context.strokeStyle = "#CCCCCC";
+                            this.Context.lineWidth = 1;
                             var field = this.Fields[x][y];
+                            var fill = true;
                             if (field.Object) {//Hvis der er et object på feltet
                                 this.Context.fillStyle = field.Object.Color;
                                 if (field == this.SelectedField) {//hvis feltet er klikket på og valgt
@@ -170,11 +162,14 @@
                                 if (field == this.HoveredField) {//hvis hover
                                     this.Context.fillStyle = field.Object.HoverColor;
                                 }
-                            } else if (this.SelectedField.Xpos != -1 && field == this.HoveredField) {//ellers brug farven fra field når man hover
-                                this.Context.fillStyle = field.FillColor;
-                            }
+                            } else if (this.SelectedField.Xpos != -1 && field == this.HoveredField) {//ellers brug farven fra field når man hover                               
+                                this.Context.strokeStyle = field.FillColor;
+                                this.Context.lineWidth = 5;
+                                fill = false;  
+                            } 
 
-                            this.DrawHexagon(this.Context, screenX, screenY, true, x, y);
+
+                            this.DrawHexagon(this.Context, screenX, screenY, fill, x, y);
                         }
                     }
                    
