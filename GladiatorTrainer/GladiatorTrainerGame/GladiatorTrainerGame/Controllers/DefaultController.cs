@@ -13,5 +13,7 @@ namespace GladiatorTrainerGame.Controllers
         {
             return View();
         }
+
+        
     }
 }

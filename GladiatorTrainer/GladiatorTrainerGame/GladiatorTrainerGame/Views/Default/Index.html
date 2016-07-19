@@ -1,9 +1,11 @@
-﻿@{
-    ViewBag.Title = "Index";
-}
-@section head{
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+	<meta charset="utf-8" />
+    <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
     <script src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
-    <script src="@Url.Content("~/Scripts/gameClient.js")"></script>
+   
     <style type="text/css">
         canvas {
             border: 0;
@@ -12,17 +14,22 @@
         }
     </style>
 
-}
+ 
+</head>
+<body>
+    <canvas id="hexmap" width="660" height="624"></canvas>
 
-
-@section scripts{
     <script>
         $(function () {
-
             var app = new GameClient.App(io());
-          
 
+            socket.io.socket
         });
+           
+
     </script>
-    }
-<canvas id="hexmap" width="660" height="624"></canvas>
+
+    <script src="gameClient.js"></script>
+
+</body>
+</html>

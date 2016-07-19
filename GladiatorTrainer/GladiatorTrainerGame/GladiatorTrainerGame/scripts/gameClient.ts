@@ -1,15 +1,16 @@
-﻿module GameClient {
+﻿/// <reference path="typings/socket.io/socket.io.d.ts" />
 
+module GameClient {
     export class App {
-        Board: Board;
-
-        constructor() {
-            this.Board = new Board();
-            this.InitiateFields();
-            this.Simulation();
+        Board: Board;        
+       
+        constructor(io) {
+            this.Board = new Board(io);
+            this.InitiateFields();             
+            this.Start();            
         }
 
-        Simulation = () => {
+        Start = () => {
             this.Board.DrawBoardFields();
         }
 
@@ -23,7 +24,7 @@
         }
     }
 
-    export class Field {
+    export class Field implements GameInterfaces.IField {
         Xpos: number;
         Ypos: number;
         Object: BoardObject;
@@ -36,7 +37,7 @@
         }
     }
 
-    export class BoardObject {
+    export class BoardObject implements GameInterfaces.IBoardObject {
         Color: string;
         SelectedColor: string;
         HoverColor: string;
@@ -61,13 +62,15 @@
         BoardWidth: number;
         BoardHeight: number;
         Context: CanvasRenderingContext2D;
-        Canvas: HTMLCanvasElement;
-        ObjectsOnBoard: BoardObject[];
+        Canvas: HTMLCanvasElement;       
         Fields: Field[][];
         SelectedField: Field;
         HoveredField: Field;
         FakeField: Field;
-        constructor() {
+        Socket: SocketIO.Socket;
+
+        constructor(io: SocketIO.Socket) {
+            this.Socket = <SocketIO.Socket>io;
             this.FakeField = new Field(-1, -1);
             this.SelectedField = this.FakeField;
             this.HoveredField = this.FakeField;
@@ -79,6 +82,11 @@
                     this.Fields[x][y] = new Field(x, y);
                 }
             }
+         
+            this.Socket.on("BoardUpdate", (fields: GameInterfaces.IField[][]) => {
+                this.Fields = fields;
+                this.DrawBoardFields();
+            });
         }
 
         Init = () => {
@@ -194,7 +202,8 @@
         MoveBoardObject = (fieldFrom: Field, fieldTo: Field) => {
             fieldTo.Object = fieldFrom.Object;
             fieldFrom.Object = null;
-            this.DrawBoardFields();
+            this.Socket.emit("playerMoved", this.Fields);
+            //this.DrawBoardFields();
             console.log("moved object to " + fieldTo.Xpos + "," + fieldTo.Ypos);
         }
 
