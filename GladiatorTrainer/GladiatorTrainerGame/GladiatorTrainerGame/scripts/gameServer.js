@@ -6,11 +6,27 @@ var GameServer;
             var _this = this;
             this.OnConnection = function (socket) {
                 console.log('a user connected');
-                socket.on('disconnect', _this.OnDisconnect);
-                socket.on('playerMoved', _this.PlayerMoved);
+                var _socket = socket;
+                if (_this.Players.length < _this.PlayerLimit) {
+                    var player = new Player(socket.id);
+                    _this.Players.push(player);
+                    socket.on('disconnect', function () {
+                        var test = socket.user;
+                        console.log("player disconnected");
+                    });
+                    socket.on('playerMoved', _this.PlayerMoved);
+                    socket.on('AddClient', function (data) {
+                        socket.user = data;
+                    });
+                }
+                else if (_this.Players.length == _this.PlayerLimit) {
+                    return;
+                }
             };
-            this.OnDisconnect = function () {
-                console.log("player disconnected");
+            this.RemovePlayer = function (id) {
+                var playerToDisconnect = _this.Players.filter(function (p) { return p.Id == id; })[0];
+                var index = _this.Players.indexOf(playerToDisconnect);
+                _this.Players.splice(index, 1);
             };
             this.PlayerMoved = function (data) {
                 //send the fields back to both players
@@ -22,6 +38,8 @@ var GameServer;
             this.ExpressApp = app;
             this.Http = http;
             this.Server = server;
+            this.Players = [];
+            this.PlayerLimit = 2;
             //SetRoute
             this.ExpressApp.get('/', function (req, res) {
                 var dirname = __dirname.replace("scripts", "");
@@ -36,6 +54,13 @@ var GameServer;
         return App;
     }());
     GameServer.App = App;
+    var Player = (function () {
+        function Player(id) {
+            this.Id = id;
+        }
+        return Player;
+    }());
+    GameServer.Player = Player;
     GameServer.express = require('express')();
     GameServer.http = require('http').Server(GameServer.express);
     GameServer.io = require('socket.io')(GameServer.http);
