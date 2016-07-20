@@ -1,28 +1,9 @@
 /// <reference path="typings/socket.io/socket.io.d.ts" />
 var GameServer;
 (function (GameServer) {
-    var App = (function () {
-        function App(app, http, server) {
+    var Application = (function () {
+        function Application(app, server, io) {
             var _this = this;
-            this.OnConnection = function (socket) {
-                console.log('a user connected');
-                var _socket = socket;
-                if (_this.Players.length < _this.PlayerLimit) {
-                    var player = new Player(socket.id);
-                    _this.Players.push(player);
-                    socket.on('disconnect', function () {
-                        var test = socket.user;
-                        console.log("player disconnected");
-                    });
-                    socket.on('playerMoved', _this.PlayerMoved);
-                    socket.on('AddClient', function (data) {
-                        socket.user = data;
-                    });
-                }
-                else if (_this.Players.length == _this.PlayerLimit) {
-                    return;
-                }
-            };
             this.RemovePlayer = function (id) {
                 var playerToDisconnect = _this.Players.filter(function (p) { return p.Id == id; })[0];
                 var index = _this.Players.indexOf(playerToDisconnect);
@@ -35,25 +16,49 @@ var GameServer;
             this.Listener = function () {
                 console.log('listening on *:3000');
             };
-            this.ExpressApp = app;
-            this.Http = http;
+            this.App = app;
+            this.IO = io;
             this.Server = server;
             this.Players = [];
             this.PlayerLimit = 2;
             //SetRoute
-            this.ExpressApp.get('/', function (req, res) {
+            this.App.get('/', function (req, res) {
                 var dirname = __dirname.replace("scripts", "");
                 res.sendFile(dirname + '/Views/Default/Index.html');
             });
             //SetListener
-            this.Http.listen(3000, this.Listener);
-            this.Server.on('connection', this.OnConnection);
+            this.Server.listen(3000, this.Listener);
+            this.IO.on('connection', function (socket) {
+                if (_this.Players.filter(function (p) { return p.Id == socket.id; })[0] == undefined) {
+                    var player = new Player(socket.id.substring(2, socket.id.length));
+                    _this.Players.push(player);
+                }
+                console.log('a user connected');
+                var _socket = socket;
+                if (_this.Players.length < _this.PlayerLimit) {
+                    socket.on('disconnect', function () {
+                        var playerToRemove = _this.Players.filter(function (p) { return p.Id == socket.client.id; })[0];
+                        _this.Players.splice(_this.Players.indexOf(playerToRemove), 1);
+                        console.log("player disconnected");
+                    });
+                    socket.on('playerMoved', _this.PlayerMoved);
+                    socket.on('addclient', function (data) {
+                        socket.client = data;
+                        var player = new Player(socket.id);
+                        _this.Players.push(player);
+                    });
+                }
+                else if (_this.Players.length == _this.PlayerLimit) {
+                    return;
+                }
+            });
+            ;
             var express2 = require('express');
-            this.ExpressApp.use(express2.static(__dirname)); //giv adgang til filer i scripts 
+            this.App.use(express2.static(__dirname)); //giv adgang til filer i scripts 
         }
-        return App;
+        return Application;
     }());
-    GameServer.App = App;
+    GameServer.Application = Application;
     var Player = (function () {
         function Player(id) {
             this.Id = id;
@@ -61,8 +66,8 @@ var GameServer;
         return Player;
     }());
     GameServer.Player = Player;
-    GameServer.express = require('express')();
-    GameServer.http = require('http').Server(GameServer.express);
-    GameServer.io = require('socket.io')(GameServer.http);
-    GameServer.Application = new App(GameServer.express, GameServer.http, GameServer.io);
+    GameServer.app = require('express')();
+    GameServer.server = require('http').Server(GameServer.app);
+    GameServer.io = require('socket.io')(GameServer.server);
+    new Application(GameServer.app, GameServer.server, GameServer.io);
 })(GameServer || (GameServer = {}));
