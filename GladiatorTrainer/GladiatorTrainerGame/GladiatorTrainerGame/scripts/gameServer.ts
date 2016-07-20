@@ -26,8 +26,10 @@ module GameServer {
             this.Server.listen(3000, this.Listener);
             this.IO.on('connection', (socket: SocketIO.Socket) => {
                 if (this.Players.filter(p => p.Id == socket.id)[0] == undefined) {
-                    var player = new Player(socket.id.substring(2, socket.id.length));
+                    var player = new Player(socket.id.substring(2, socket.id.length));                   
                     this.Players.push(player);
+                    var dto = new PlayerJoinDTO(player, this.Players);
+                    socket.emit("PlayerJoined", dto);
                 }
                 
                 console.log('a user connected');
@@ -36,6 +38,7 @@ module GameServer {
                     socket.on('disconnect', () => {
                         var playerToRemove = this.Players.filter(p => p.Id == socket.client.id)[0];
                         this.Players.splice(this.Players.indexOf(playerToRemove), 1);
+                        socket
                         console.log("player disconnected");
                     });
 
@@ -82,7 +85,17 @@ module GameServer {
             this.Id = id;
         }
     }
-  
+
+    export class PlayerJoinDTO {
+        Player: Player;
+        Players: Player[];
+
+        constructor(player: Player, players: Player[]) {
+            this.Player = player;
+            this.Players = players;
+        }
+    }
+
     export var app = require('express')();      
     export var server = require('http').Server(app);
     export var io = require('socket.io')(server);

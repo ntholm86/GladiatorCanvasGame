@@ -3,9 +3,10 @@
 module GameClient {
     export class App {
         Board: Board;        
-       
+        Player: Player;
+
         constructor(io) {
-            this.Board = new Board(io);
+            this.Board = new Board(io, this);
             this.InitiateFields();             
             this.Start();            
         }
@@ -52,6 +53,15 @@ module GameClient {
 
     }
 
+
+    export class Player {
+        Id: string;
+
+        constructor(id: string) {
+            this.Id = id;
+        }
+    }
+
     export class Board {
         HexHeight: number;
         HexRadius: number;
@@ -68,8 +78,11 @@ module GameClient {
         HoveredField: Field;
         FakeField: Field;
         Socket: SocketIO.Socket;
+        Players: Player[];
+        App: App;
 
-        constructor(io: SocketIO.Socket) {
+        constructor(io: SocketIO.Socket, app: App) {
+            this.App = app;
             this.Socket = <SocketIO.Socket>io;
             this.FakeField = new Field(-1, -1);
             this.SelectedField = this.FakeField;
@@ -82,7 +95,18 @@ module GameClient {
                     this.Fields[x][y] = new Field(x, y);
                 }
             }
-         
+
+            this.Socket.on("PlayerJoined", (dto: GameServer.PlayerJoinDTO) => {
+                this.App.Player = dto.Player;
+                this.Players = dto.Players;
+                console.log("player: " + dto.Player.Id);
+                console.log("players");
+                $.each(dto.Players, (i, item) => {
+                    console.log(item.Id);
+                });
+                
+            });
+
             this.Socket.on("BoardUpdate", (fields: GameInterfaces.IField[][]) => {
                 this.Fields = fields;
                 this.DrawBoardFields();
@@ -139,10 +163,10 @@ module GameClient {
         }
 
         DrawBoardFields = () => {
-            console.log("SelectedField: ");
-            console.log(this.SelectedField);
-            console.log("HoveredField: ");
-            console.log(this.HoveredField);
+            //console.log("SelectedField: ");
+            //console.log(this.SelectedField);
+            //console.log("HoveredField: ");
+            //console.log(this.HoveredField);
             this.Context.clearRect(0, 0, this.Canvas.width, this.Canvas.height);
 
 

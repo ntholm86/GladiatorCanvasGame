@@ -32,6 +32,8 @@ var GameServer;
                 if (_this.Players.filter(function (p) { return p.Id == socket.id; })[0] == undefined) {
                     var player = new Player(socket.id.substring(2, socket.id.length));
                     _this.Players.push(player);
+                    var dto = new PlayerJoinDTO(player, _this.Players);
+                    socket.emit("PlayerJoined", dto);
                 }
                 console.log('a user connected');
                 var _socket = socket;
@@ -39,6 +41,7 @@ var GameServer;
                     socket.on('disconnect', function () {
                         var playerToRemove = _this.Players.filter(function (p) { return p.Id == socket.client.id; })[0];
                         _this.Players.splice(_this.Players.indexOf(playerToRemove), 1);
+                        socket;
                         console.log("player disconnected");
                     });
                     socket.on('playerMoved', _this.PlayerMoved);
@@ -66,6 +69,14 @@ var GameServer;
         return Player;
     }());
     GameServer.Player = Player;
+    var PlayerJoinDTO = (function () {
+        function PlayerJoinDTO(player, players) {
+            this.Player = player;
+            this.Players = players;
+        }
+        return PlayerJoinDTO;
+    }());
+    GameServer.PlayerJoinDTO = PlayerJoinDTO;
     GameServer.app = require('express')();
     GameServer.server = require('http').Server(GameServer.app);
     GameServer.io = require('socket.io')(GameServer.server);

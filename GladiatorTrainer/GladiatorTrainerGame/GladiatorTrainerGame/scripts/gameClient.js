@@ -15,7 +15,7 @@ var GameClient;
                 _this.Board.Fields[6][5].Object = new BoardObject("#32ba3e", "green", "yellow", true);
                 _this.Board.Fields[1][7].Object = new BoardObject("#3880e3", "green", "yellow", true);
             };
-            this.Board = new Board(io);
+            this.Board = new Board(io, this);
             this.InitiateFields();
             this.Start();
         }
@@ -41,8 +41,15 @@ var GameClient;
         return BoardObject;
     }());
     GameClient.BoardObject = BoardObject;
+    var Player = (function () {
+        function Player(id) {
+            this.Id = id;
+        }
+        return Player;
+    }());
+    GameClient.Player = Player;
     var Board = (function () {
-        function Board(io) {
+        function Board(io, app) {
             var _this = this;
             this.Init = function () {
                 _this.Canvas = document.getElementById('hexmap');
@@ -83,10 +90,10 @@ var GameClient;
                 canvasContext.fillText(xpos + "," + ypos, x + _this.HexRadius - 15, y + _this.HexHeight + 25);
             };
             this.DrawBoardFields = function () {
-                console.log("SelectedField: ");
-                console.log(_this.SelectedField);
-                console.log("HoveredField: ");
-                console.log(_this.HoveredField);
+                //console.log("SelectedField: ");
+                //console.log(this.SelectedField);
+                //console.log("HoveredField: ");
+                //console.log(this.HoveredField);
                 _this.Context.clearRect(0, 0, _this.Canvas.width, _this.Canvas.height);
                 for (var x = 0; x < _this.BoardWidth; ++x) {
                     for (var y = 0; y < _this.BoardHeight; ++y) {
@@ -185,6 +192,7 @@ var GameClient;
                     _this.DrawBoardFields();
                 }
             };
+            this.App = app;
             this.Socket = io;
             this.FakeField = new Field(-1, -1);
             this.SelectedField = this.FakeField;
@@ -197,6 +205,15 @@ var GameClient;
                     this.Fields[x][y] = new Field(x, y);
                 }
             }
+            this.Socket.on("PlayerJoined", function (dto) {
+                _this.App.Player = dto.Player;
+                _this.Players = dto.Players;
+                console.log("player: " + dto.Player.Id);
+                console.log("players");
+                $.each(dto.Players, function (i, item) {
+                    console.log(item.Id);
+                });
+            });
             this.Socket.on("BoardUpdate", function (fields) {
                 _this.Fields = fields;
                 _this.DrawBoardFields();
