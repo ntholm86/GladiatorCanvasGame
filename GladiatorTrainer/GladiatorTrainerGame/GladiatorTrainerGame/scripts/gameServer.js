@@ -30,13 +30,19 @@ var GameServer;
             this.Server.listen(3000, this.Listener);
             this.IO.on('connection', function (socket) {
                 if (_this.Players.length < _this.PlayerLimit) {
+                    console.log('a user connected');
+                    //Hvis player med id fra socket ikke er i vores liste
                     if (_this.Players.filter(function (p) { return p.Id == socket.id; })[0] == undefined) {
                         var player = new Player(socket.id.substring(2, socket.id.length));
                         _this.Players.push(player);
                         var dto = new PlayerJoinDTO(player, _this.Players);
                         socket.emit("PlayerJoined", dto);
                     }
-                    console.log('a user connected');
+                    //Hvis boarded er fyldt med spillere
+                    if (_this.Players.length == _this.PlayerLimit) {
+                        _this.TurnHandler = new TurnHandler(_this.Players, _this.IO);
+                        _this.TurnHandler.NotifyPlayersGameStarted();
+                    }
                     socket.on('disconnect', function () {
                         var playerToRemove = _this.Players.filter(function (p) { return p.Id == socket.client.id; })[0];
                         _this.Players.splice(_this.Players.indexOf(playerToRemove), 1);
@@ -48,18 +54,35 @@ var GameServer;
                         var player = new Player(socket.id);
                         _this.Players.push(player);
                     });
+                    socket.on("TurnEnded", function (playerid) {
+                        var test = "";
+                    });
                 }
                 else {
                     socket.emit("BoardFullMessage", "");
+                    socket.disconnect(true);
+                    ;
                 }
             });
             ;
-            var express2 = require('express');
-            this.App.use(express2.static(__dirname)); //giv adgang til filer i scripts 
+            this.App.use(require('express').static(__dirname)); //giv adgang til filer i scripts 
         }
         return Application;
     }());
     GameServer.Application = Application;
+    var TurnHandler = (function () {
+        function TurnHandler(players, io) {
+            var _this = this;
+            this.NotifyPlayersGameStarted = function () {
+                _this.IO.emit("GameStarted", _this.CurrentPlayer);
+            };
+            this.IO = io;
+            this.CurrentPlayer = players[0];
+            this.Players = players;
+        }
+        return TurnHandler;
+    }());
+    GameServer.TurnHandler = TurnHandler;
     var Player = (function () {
         function Player(id) {
             this.Id = id;

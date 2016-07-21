@@ -16,6 +16,7 @@ var GameClient;
                 _this.Board.Fields[1][7].Object = new BoardObject("#3880e3", "green", "yellow", true);
             };
             this.Board = new Board(io, this);
+            this.TurnHandler = new GameClient.TurnHandler(io, this);
             this.InitiateFields();
             this.Start();
         }
@@ -48,6 +49,22 @@ var GameClient;
         return Player;
     }());
     GameClient.Player = Player;
+    var TurnHandler = (function () {
+        function TurnHandler(io, app) {
+            var _this = this;
+            this.StartTurn = function () {
+                _this.HasTurn = true;
+            };
+            this.EndTurn = function () {
+                _this.IO.emit("TurnEnded", _this.App.Player.Id);
+                _this.HasTurn = false;
+            };
+            this.IO = io;
+            this.HasTurn = false;
+        }
+        return TurnHandler;
+    }());
+    GameClient.TurnHandler = TurnHandler;
     var Board = (function () {
         function Board(io, app) {
             var _this = this;
@@ -214,13 +231,20 @@ var GameClient;
                     console.log(item.Id);
                 });
             });
-            this.Socket.on("BoardFullMessage", function () {
-                _this.Canvas.remove();
-                $("#serverMessages").html("<h1>Board is full</h1>");
+            this.Socket.on("BoardFullMessage", function (message) {
+                $("#serverMessages").html("<h1>Board full</h1>");
             });
             this.Socket.on("BoardUpdate", function (fields) {
                 _this.Fields = fields;
                 _this.DrawBoardFields();
+            });
+            this.Socket.on("GameStarted", function (startingPlayer) {
+                if (startingPlayer.Id == _this.App.Player.Id) {
+                    $("#serverMessages").html("<h1>Your turn!</h1>");
+                }
+                else {
+                    $("#serverMessages").html("<h1>The other player is making his move</h1>");
+                }
             });
         }
         return Board;

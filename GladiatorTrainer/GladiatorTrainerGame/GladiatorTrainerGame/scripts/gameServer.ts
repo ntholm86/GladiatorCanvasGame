@@ -8,6 +8,7 @@ module GameServer {
         Server: any;
         Players: Player[];
         PlayerLimit: number;
+        TurnHandler: TurnHandler;
 
         constructor(app: any, server: any, io: any) {
             this.App = app;
@@ -26,15 +27,22 @@ module GameServer {
             this.Server.listen(3000, this.Listener);
             this.IO.on('connection', (socket: SocketIO.Socket) => {
                 if (this.Players.length < this.PlayerLimit) {
+                    console.log('a user connected');
+
+                    //Hvis player med id fra socket ikke er i vores liste
                     if (this.Players.filter(p => p.Id == socket.id)[0] == undefined) {
                         var player = new Player(socket.id.substring(2, socket.id.length));
                         this.Players.push(player);
                         var dto = new PlayerJoinDTO(player, this.Players);
                         socket.emit("PlayerJoined", dto);
                     }
-              
-                    console.log('a user connected');
-                    
+
+                    //Hvis boarded er fyldt med spillere
+                    if (this.Players.length == this.PlayerLimit) {
+                        this.TurnHandler = new TurnHandler(this.Players, this.IO);
+                        this.TurnHandler.NotifyPlayersGameStarted();
+                    }
+                                        
                     socket.on('disconnect', () => {
                         var playerToRemove = this.Players.filter(p => p.Id == socket.client.id)[0];
                         this.Players.splice(this.Players.indexOf(playerToRemove), 1);                        
@@ -48,13 +56,18 @@ module GameServer {
                         var player = new Player(socket.id);
                         this.Players.push(player);
                     });
+
+                    socket.on("TurnEnded", (playerid: string) => {
+                        var test = "";
+                    });
                 } else {
-                    socket.emit("BoardFullMessage", "");              
+                    socket.emit("BoardFullMessage", "");      
+                    socket.disconnect(true);;        
                 }
             });;
 
-            var express2 = require('express');
-            this.App.use(express2.static(__dirname));//giv adgang til filer i scripts 
+            
+            this.App.use(require('express').static(__dirname));//giv adgang til filer i scripts 
             
         }
         
@@ -73,6 +86,23 @@ module GameServer {
         Listener = () => {
             console.log('listening on *:3000');
         }
+    }
+
+    export class TurnHandler {
+        CurrentPlayer: Player;
+        Players: Player[];
+        IO: SocketIO.Server;
+
+        constructor(players: Player[], io: SocketIO.Server) {
+            this.IO = io;
+            this.CurrentPlayer = players[0];
+            this.Players = players;
+        }
+
+        NotifyPlayersGameStarted = () => {
+            this.IO.emit("GameStarted", this.CurrentPlayer);
+        }
+
     }
 
     export class Player {
