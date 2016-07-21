@@ -11,7 +11,7 @@ var GameServer;
             };
             this.PlayerMoved = function (data) {
                 //send the fields back to both players
-                _this.Server.emit('BoardUpdate', data);
+                _this.IO.emit('BoardUpdate', data);
             };
             this.Listener = function () {
                 console.log('listening on *:3000');
@@ -29,19 +29,17 @@ var GameServer;
             //SetListener
             this.Server.listen(3000, this.Listener);
             this.IO.on('connection', function (socket) {
-                if (_this.Players.filter(function (p) { return p.Id == socket.id; })[0] == undefined) {
-                    var player = new Player(socket.id.substring(2, socket.id.length));
-                    _this.Players.push(player);
-                    var dto = new PlayerJoinDTO(player, _this.Players);
-                    socket.emit("PlayerJoined", dto);
-                }
-                console.log('a user connected');
-                var _socket = socket;
                 if (_this.Players.length < _this.PlayerLimit) {
+                    if (_this.Players.filter(function (p) { return p.Id == socket.id; })[0] == undefined) {
+                        var player = new Player(socket.id.substring(2, socket.id.length));
+                        _this.Players.push(player);
+                        var dto = new PlayerJoinDTO(player, _this.Players);
+                        socket.emit("PlayerJoined", dto);
+                    }
+                    console.log('a user connected');
                     socket.on('disconnect', function () {
                         var playerToRemove = _this.Players.filter(function (p) { return p.Id == socket.client.id; })[0];
                         _this.Players.splice(_this.Players.indexOf(playerToRemove), 1);
-                        socket;
                         console.log("player disconnected");
                     });
                     socket.on('playerMoved', _this.PlayerMoved);
@@ -51,8 +49,8 @@ var GameServer;
                         _this.Players.push(player);
                     });
                 }
-                else if (_this.Players.length == _this.PlayerLimit) {
-                    return;
+                else {
+                    socket.emit("BoardFullMessage", "");
                 }
             });
             ;

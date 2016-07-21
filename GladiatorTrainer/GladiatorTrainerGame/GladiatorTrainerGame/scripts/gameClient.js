@@ -214,6 +214,10 @@ var GameClient;
                     console.log(item.Id);
                 });
             });
+            this.Socket.on("BoardFullMessage", function () {
+                _this.Canvas.remove();
+                $("#serverMessages").html("<h1>Board is full</h1>");
+            });
             this.Socket.on("BoardUpdate", function (fields) {
                 _this.Fields = fields;
                 _this.DrawBoardFields();

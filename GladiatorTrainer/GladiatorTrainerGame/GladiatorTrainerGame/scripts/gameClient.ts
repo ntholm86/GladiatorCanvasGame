@@ -53,7 +53,6 @@ module GameClient {
 
     }
 
-
     export class Player {
         Id: string;
 
@@ -94,7 +93,7 @@ module GameClient {
                 for (var y = 0; y < this.BoardHeight; ++y) {
                     this.Fields[x][y] = new Field(x, y);
                 }
-            }
+            }         
 
             this.Socket.on("PlayerJoined", (dto: GameServer.PlayerJoinDTO) => {
                 this.App.Player = dto.Player;
@@ -105,6 +104,12 @@ module GameClient {
                     console.log(item.Id);
                 });
                 
+            });
+
+
+            this.Socket.on("BoardFullMessage", () => {           
+                this.Canvas.remove();
+                $("#serverMessages").html("<h1>Board is full</h1>");
             });
 
             this.Socket.on("BoardUpdate", (fields: GameInterfaces.IField[][]) => {

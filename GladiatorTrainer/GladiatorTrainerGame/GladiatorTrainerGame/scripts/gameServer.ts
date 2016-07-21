@@ -25,20 +25,19 @@ module GameServer {
             //SetListener
             this.Server.listen(3000, this.Listener);
             this.IO.on('connection', (socket: SocketIO.Socket) => {
-                if (this.Players.filter(p => p.Id == socket.id)[0] == undefined) {
-                    var player = new Player(socket.id.substring(2, socket.id.length));                   
-                    this.Players.push(player);
-                    var dto = new PlayerJoinDTO(player, this.Players);
-                    socket.emit("PlayerJoined", dto);
-                }
-                
-                console.log('a user connected');
-                var _socket = socket;
                 if (this.Players.length < this.PlayerLimit) {
+                    if (this.Players.filter(p => p.Id == socket.id)[0] == undefined) {
+                        var player = new Player(socket.id.substring(2, socket.id.length));
+                        this.Players.push(player);
+                        var dto = new PlayerJoinDTO(player, this.Players);
+                        socket.emit("PlayerJoined", dto);
+                    }
+              
+                    console.log('a user connected');
+                    
                     socket.on('disconnect', () => {
                         var playerToRemove = this.Players.filter(p => p.Id == socket.client.id)[0];
-                        this.Players.splice(this.Players.indexOf(playerToRemove), 1);
-                        socket
+                        this.Players.splice(this.Players.indexOf(playerToRemove), 1);                        
                         console.log("player disconnected");
                     });
 
@@ -49,11 +48,9 @@ module GameServer {
                         var player = new Player(socket.id);
                         this.Players.push(player);
                     });
+                } else {
+                    socket.emit("BoardFullMessage", "");              
                 }
-                else if (this.Players.length == this.PlayerLimit) {
-                    return;
-                }
-
             });;
 
             var express2 = require('express');
@@ -70,7 +67,7 @@ module GameServer {
 
         PlayerMoved = (data: GameInterfaces.IField[][]) => {
             //send the fields back to both players
-            this.Server.emit('BoardUpdate', data);
+            this.IO.emit('BoardUpdate', data);
         }
 
         Listener = () => {
