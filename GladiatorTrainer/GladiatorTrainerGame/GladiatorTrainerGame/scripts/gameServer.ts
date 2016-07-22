@@ -25,6 +25,7 @@ module GameServer {
 
             //SetListener
             this.Server.listen(3000, this.Listener);
+
             this.IO.on('connection', (socket: SocketIO.Socket) => {
                 if (this.Players.length < this.PlayerLimit) {
                     console.log('a user connected');
@@ -57,8 +58,9 @@ module GameServer {
                         this.Players.push(player);
                     });
 
-                    socket.on("TurnEnded", (playerid: string) => {
-                        var test = "";
+                    socket.on("endTurn", (playerid: string) => {
+                        this.TurnHandler.CurrentPlayer = this.Players.filter(p => p.Id != playerid)[0];
+                        this.IO.emit('TurnPass', this.TurnHandler.CurrentPlayer.Id);
                     });
                 } else {
                     socket.emit("BoardFullMessage", "");      

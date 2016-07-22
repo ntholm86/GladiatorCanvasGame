@@ -54,8 +54,9 @@ var GameServer;
                         var player = new Player(socket.id);
                         _this.Players.push(player);
                     });
-                    socket.on("TurnEnded", function (playerid) {
-                        var test = "";
+                    socket.on("endTurn", function (playerid) {
+                        _this.TurnHandler.CurrentPlayer = _this.Players.filter(function (p) { return p.Id != playerid; })[0];
+                        _this.IO.emit('TurnPass', _this.TurnHandler.CurrentPlayer.Id);
                     });
                 }
                 else {

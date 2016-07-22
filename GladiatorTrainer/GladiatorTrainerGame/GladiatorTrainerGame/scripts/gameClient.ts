@@ -73,11 +73,7 @@ module GameClient {
             this.IO = io;
             this.HasTurn = false;
         }
-
-        StartTurn = () => {
-            this.HasTurn = true;
-        }
-        
+     
         EndTurn = () => {
             this.IO.emit("TurnEnded", this.App.Player.Id);
             this.HasTurn = false;
@@ -140,17 +136,32 @@ module GameClient {
 
 
             this.Socket.on("BoardUpdate", (fields: GameInterfaces.IField[][]) => {
-                this.Fields = fields;
+                if (fields) {
+                    this.Fields = fields;
+                }
+                
                 this.DrawBoardFields();
             });
 
             this.Socket.on("GameStarted", (startingPlayer: GameServer.Player) => {
                 if (startingPlayer.Id == this.App.Player.Id) {
+                    this.App.TurnHandler.HasTurn = true;
                     $("#serverMessages").html("<h1>Your turn!</h1>");
                 } else {
                     $("#serverMessages").html("<h1>The other player is making his move</h1>");
                 }
                 
+            });
+
+            this.Socket.on("TurnPass", (playerId: string) => {
+                $("#serverMessages").html("");                
+                if (playerId == this.App.Player.Id) {
+                    this.App.TurnHandler.HasTurn = true;
+                    $("#serverMessages").html("<h1>Your turn!</h1>");
+                } else {
+                    this.App.TurnHandler.HasTurn = false;
+                    $("#serverMessages").html("<h1>The other player is making his move</h1>");
+                }
             });
             
         }
@@ -271,10 +282,16 @@ module GameClient {
             this.Socket.emit("playerMoved", this.Fields);
             //this.DrawBoardFields();
             console.log("moved object to " + fieldTo.Xpos + "," + fieldTo.Ypos);
+
+            //ChangeTurn
+            this.Socket.emit("endTurn", this.App.Player.Id);
         }
 
 
         FieldClickHandler = (eventInfo) => {
+            if (!this.App.TurnHandler.HasTurn)
+                return;
+
             var x,
                 y,
                 hexX,
@@ -317,6 +334,9 @@ module GameClient {
         }
 
         MouseMove = (eventInfo) => {
+            if (!this.App.TurnHandler.HasTurn)
+                return;
+
             var x,
                 y,
                 hexX,

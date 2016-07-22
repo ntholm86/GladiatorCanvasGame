@@ -52,9 +52,6 @@ var GameClient;
     var TurnHandler = (function () {
         function TurnHandler(io, app) {
             var _this = this;
-            this.StartTurn = function () {
-                _this.HasTurn = true;
-            };
             this.EndTurn = function () {
                 _this.IO.emit("TurnEnded", _this.App.Player.Id);
                 _this.HasTurn = false;
@@ -160,8 +157,12 @@ var GameClient;
                 _this.Socket.emit("playerMoved", _this.Fields);
                 //this.DrawBoardFields();
                 console.log("moved object to " + fieldTo.Xpos + "," + fieldTo.Ypos);
+                //ChangeTurn
+                _this.Socket.emit("endTurn", _this.App.Player.Id);
             };
             this.FieldClickHandler = function (eventInfo) {
+                if (!_this.App.TurnHandler.HasTurn)
+                    return;
                 var x, y, hexX, hexY, screenX, screenY;
                 x = eventInfo.offsetX || eventInfo.layerX;
                 y = eventInfo.offsetY || eventInfo.layerY;
@@ -192,6 +193,8 @@ var GameClient;
                 return false;
             };
             this.MouseMove = function (eventInfo) {
+                if (!_this.App.TurnHandler.HasTurn)
+                    return;
                 var x, y, hexX, hexY, screenX, screenY;
                 x = eventInfo.offsetX || eventInfo.layerX;
                 y = eventInfo.offsetY || eventInfo.layerY;
@@ -235,14 +238,28 @@ var GameClient;
                 $("#serverMessages").html("<h1>Board full</h1>");
             });
             this.Socket.on("BoardUpdate", function (fields) {
-                _this.Fields = fields;
+                if (fields) {
+                    _this.Fields = fields;
+                }
                 _this.DrawBoardFields();
             });
             this.Socket.on("GameStarted", function (startingPlayer) {
                 if (startingPlayer.Id == _this.App.Player.Id) {
+                    _this.App.TurnHandler.HasTurn = true;
                     $("#serverMessages").html("<h1>Your turn!</h1>");
                 }
                 else {
+                    $("#serverMessages").html("<h1>The other player is making his move</h1>");
+                }
+            });
+            this.Socket.on("TurnPass", function (playerId) {
+                $("#serverMessages").html("");
+                if (playerId == _this.App.Player.Id) {
+                    _this.App.TurnHandler.HasTurn = true;
+                    $("#serverMessages").html("<h1>Your turn!</h1>");
+                }
+                else {
+                    _this.App.TurnHandler.HasTurn = false;
                     $("#serverMessages").html("<h1>The other player is making his move</h1>");
                 }
             });
