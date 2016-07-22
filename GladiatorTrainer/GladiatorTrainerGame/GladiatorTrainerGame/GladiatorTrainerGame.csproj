@@ -181,6 +181,7 @@
   </ItemGroup>
   <ItemGroup>
     <TypeScriptCompile Include="scripts\gameClient.ts" />
+    <TypeScriptCompile Include="scripts\GameObjects.ts" />
     <TypeScriptCompile Include="scripts\gameServer.ts" />
     <TypeScriptCompile Include="scripts\GameInterfaces.ts" />
     <TypeScriptCompile Include="scripts\typings\jquery.d.ts" />
@@ -207,7 +208,7 @@
     <VisualStudio>
       <FlavorProperties GUID="{349c5851-65df-11da-9384-00065b846f21}">
         <WebProjectProperties>
-          <UseIIS>True</UseIIS>
+          <UseIIS>False</UseIIS>
           <AutoAssignPort>True</AutoAssignPort>
           <DevelopmentServerPort>62047</DevelopmentServerPort>
           <DevelopmentServerVPath>/</DevelopmentServerVPath>

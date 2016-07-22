@@ -3,9 +3,11 @@
 module GameClient {
     export class App {
         Board: Board;        
-       
-        constructor(io) {
-            this.Board = new Board(io);
+        Player: Player;
+        TurnHandler: TurnHandler;
+        constructor(io: SocketIO.Socket) {
+            this.Board = new Board(io, this);
+            this.TurnHandler = new GameClient.TurnHandler(io, this);
             this.InitiateFields();             
             this.Start();            
         }
@@ -52,6 +54,37 @@ module GameClient {
 
     }
 
+
+    export class Player {
+        Id: string;
+
+        constructor(id: string) {
+            this.Id = id;
+        }
+    }
+
+    export class TurnHandler {
+        HasTurn: boolean;
+        IO: SocketIO.Socket;
+        PlayerId: string;
+        App: App;
+
+        constructor(io: SocketIO.Socket, app: App) {
+            this.IO = io;
+            this.HasTurn = false;
+        }
+     
+        EndTurn = () => {
+            this.IO.emit("TurnEnded", this.App.Player.Id);
+            this.HasTurn = false;
+        }
+
+        //NotifyPlayersGameStarted = () => {
+        //    this.IO.emit("GameStarted", this.CurrentPlayer);
+        //}
+
+    }
+
     export class Board {
         HexHeight: number;
         HexRadius: number;
@@ -68,8 +101,11 @@ module GameClient {
         HoveredField: Field;
         FakeField: Field;
         Socket: SocketIO.Socket;
+        Players: Player[];
+        App: App;
 
-        constructor(io: SocketIO.Socket) {
+        constructor(io: SocketIO.Socket, app: App) {
+            this.App = app;
             this.Socket = <SocketIO.Socket>io;
             this.FakeField = new Field(-1, -1);
             this.SelectedField = this.FakeField;
@@ -82,11 +118,52 @@ module GameClient {
                     this.Fields[x][y] = new Field(x, y);
                 }
             }
-         
+
+            this.Socket.on("PlayerJoined", (dto: GameServer.PlayerJoinDTO) => {
+                this.App.Player = dto.Player;
+                this.Players = dto.Players;
+                console.log("player: " + dto.Player.Id);
+                console.log("players");
+                $.each(dto.Players, (i, item) => {
+                    console.log(item.Id);
+                });
+                
+            });
+
+            this.Socket.on("BoardFullMessage", (message) => {
+                $("#serverMessages").html("<h1>Board full</h1>");
+            });
+
+
             this.Socket.on("BoardUpdate", (fields: GameInterfaces.IField[][]) => {
-                this.Fields = fields;
+                if (fields) {
+                    this.Fields = fields;
+                }
+                
                 this.DrawBoardFields();
             });
+
+            this.Socket.on("GameStarted", (startingPlayer: GameServer.Player) => {
+                if (startingPlayer.Id == this.App.Player.Id) {
+                    this.App.TurnHandler.HasTurn = true;
+                    $("#serverMessages").html("<h1>Your turn!</h1>");
+                } else {
+                    $("#serverMessages").html("<h1>The other player is making his move</h1>");
+                }
+                
+            });
+
+            this.Socket.on("TurnPass", (playerId: string) => {
+                $("#serverMessages").html("");                
+                if (playerId == this.App.Player.Id) {
+                    this.App.TurnHandler.HasTurn = true;
+                    $("#serverMessages").html("<h1>Your turn!</h1>");
+                } else {
+                    this.App.TurnHandler.HasTurn = false;
+                    $("#serverMessages").html("<h1>The other player is making his move</h1>");
+                }
+            });
+            
         }
 
         Init = () => {
@@ -139,10 +216,10 @@ module GameClient {
         }
 
         DrawBoardFields = () => {
-            console.log("SelectedField: ");
-            console.log(this.SelectedField);
-            console.log("HoveredField: ");
-            console.log(this.HoveredField);
+            //console.log("SelectedField: ");
+            //console.log(this.SelectedField);
+            //console.log("HoveredField: ");
+            //console.log(this.HoveredField);
             this.Context.clearRect(0, 0, this.Canvas.width, this.Canvas.height);
 
 
@@ -205,10 +282,16 @@ module GameClient {
             this.Socket.emit("playerMoved", this.Fields);
             //this.DrawBoardFields();
             console.log("moved object to " + fieldTo.Xpos + "," + fieldTo.Ypos);
+
+            //ChangeTurn
+            this.Socket.emit("endTurn", this.App.Player.Id);
         }
 
 
         FieldClickHandler = (eventInfo) => {
+            if (!this.App.TurnHandler.HasTurn)
+                return;
+
             var x,
                 y,
                 hexX,
@@ -251,6 +334,9 @@ module GameClient {
         }
 
         MouseMove = (eventInfo) => {
+            if (!this.App.TurnHandler.HasTurn)
+                return;
+
             var x,
                 y,
                 hexX,

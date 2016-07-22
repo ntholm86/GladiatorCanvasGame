@@ -8,6 +8,7 @@ module GameServer {
         Server: any;
         Players: Player[];
         PlayerLimit: number;
+        TurnHandler: TurnHandler;
 
         constructor(app: any, server: any, io: any) {
             this.App = app;
@@ -24,18 +25,28 @@ module GameServer {
 
             //SetListener
             this.Server.listen(3000, this.Listener);
+
             this.IO.on('connection', (socket: SocketIO.Socket) => {
-                if (this.Players.filter(p => p.Id == socket.id)[0] == undefined) {
-                    var player = new Player(socket.id.substring(2, socket.id.length));
-                    this.Players.push(player);
-                }
-                
-                console.log('a user connected');
-                var _socket = socket;
                 if (this.Players.length < this.PlayerLimit) {
+                    console.log('a user connected');
+
+                    //Hvis player med id fra socket ikke er i vores liste
+                    if (this.Players.filter(p => p.Id == socket.id)[0] == undefined) {
+                        var player = new Player(socket.id.substring(2, socket.id.length));
+                        this.Players.push(player);
+                        var dto = new PlayerJoinDTO(player, this.Players);
+                        socket.emit("PlayerJoined", dto);
+                    }
+
+                    //Hvis boarded er fyldt med spillere
+                    if (this.Players.length == this.PlayerLimit) {
+                        this.TurnHandler = new TurnHandler(this.Players, this.IO);
+                        this.TurnHandler.NotifyPlayersGameStarted();
+                    }
+                                        
                     socket.on('disconnect', () => {
                         var playerToRemove = this.Players.filter(p => p.Id == socket.client.id)[0];
-                        this.Players.splice(this.Players.indexOf(playerToRemove), 1);
+                        this.Players.splice(this.Players.indexOf(playerToRemove), 1);                        
                         console.log("player disconnected");
                     });
 
@@ -46,15 +57,19 @@ module GameServer {
                         var player = new Player(socket.id);
                         this.Players.push(player);
                     });
-                }
-                else if (this.Players.length == this.PlayerLimit) {
-                    return;
-                }
 
+                    socket.on("endTurn", (playerid: string) => {
+                        this.TurnHandler.CurrentPlayer = this.Players.filter(p => p.Id != playerid)[0];
+                        this.IO.emit('TurnPass', this.TurnHandler.CurrentPlayer.Id);
+                    });
+                } else {
+                    socket.emit("BoardFullMessage", "");      
+                    socket.disconnect(true);;        
+                }
             });;
 
-            var express2 = require('express');
-            this.App.use(express2.static(__dirname));//giv adgang til filer i scripts 
+            
+            this.App.use(require('express').static(__dirname));//giv adgang til filer i scripts 
             
         }
         
@@ -67,12 +82,29 @@ module GameServer {
 
         PlayerMoved = (data: GameInterfaces.IField[][]) => {
             //send the fields back to both players
-            this.Server.emit('BoardUpdate', data);
+            this.IO.emit('BoardUpdate', data);
         }
 
         Listener = () => {
             console.log('listening on *:3000');
         }
+    }
+
+    export class TurnHandler {
+        CurrentPlayer: Player;
+        Players: Player[];
+        IO: SocketIO.Server;
+
+        constructor(players: Player[], io: SocketIO.Server) {
+            this.IO = io;
+            this.CurrentPlayer = players[0];
+            this.Players = players;
+        }
+
+        NotifyPlayersGameStarted = () => {
+            this.IO.emit("GameStarted", this.CurrentPlayer);
+        }
+
     }
 
     export class Player {
@@ -82,7 +114,17 @@ module GameServer {
             this.Id = id;
         }
     }
-  
+
+    export class PlayerJoinDTO {
+        Player: Player;
+        Players: Player[];
+
+        constructor(player: Player, players: Player[]) {
+            this.Player = player;
+            this.Players = players;
+        }
+    }
+
     export var app = require('express')();      
     export var server = require('http').Server(app);
     export var io = require('socket.io')(server);
